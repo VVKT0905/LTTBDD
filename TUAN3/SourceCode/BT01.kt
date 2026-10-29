@@ -30,6 +30,10 @@ import androidx.navigation.navArgument
 // Luồng: Root -> List<Lazy> -> Detail, Detail -> List -> Root, Detail -> Root
 
 val XanhChinh = Color(0xFF2196F3)
+val XanhNhat = Color(0xFFBBDEFB)
+
+const val CAU_NOI = "The only way to do great work is to love what you do."
+const val SO_DONG = 1_000_000
 
 @Composable
 fun BT01Screen() {
@@ -39,7 +43,18 @@ fun BT01Screen() {
         composable("root") {
             RootScreen(onPush = { navController.navigate("list") })
         }
+        composable("list") {
+            ListScreen(
+                onBack = { navController.popBackStack() },
+                onItemClick = { so -> navController.navigate("detail/$so") }
+            )
+        }
     }
+}
+
+// Định dạng số thứ tự: 1 -> "01", 1000000 -> "1.000.000"
+fun dinhDangSo(so: Int): String {
+    return if (so < 10) "0$so" else "%,d".format(so).replace(',', '.')
 }
 
 @Composable
@@ -81,6 +96,80 @@ fun RootScreen(onPush: () -> Unit) {
                 Text("PUSH", fontWeight = FontWeight.Bold)
             }
             Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+}
+
+// Thanh tiêu đề có nút quay lại, dùng chung cho List và Detail
+@Composable
+fun ThanhTieuDe(tieuDe: String, onBack: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(16.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .size(36.dp)
+                .background(XanhChinh, RoundedCornerShape(10.dp))
+                .clickable { onBack() },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.AutoMirrored.Filled.KeyboardArrowLeft,
+                contentDescription = "Quay lại",
+                tint = Color.White
+            )
+        }
+        Text(
+            text = tieuDe,
+            modifier = Modifier.align(Alignment.Center),
+            color = XanhChinh,
+            fontSize = 20.sp,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+fun ListScreen(onBack: () -> Unit, onItemClick: (Int) -> Unit) {
+    Scaffold(topBar = { ThanhTieuDe("LazyColumn", onBack) }) { padding ->
+        // LazyColumn chỉ tạo các dòng đang hiện trên màn hình nên 1.000.000 dòng vẫn mượt
+        LazyColumn(
+            modifier = Modifier.padding(padding),
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(count = SO_DONG) { index ->
+                val so = index + 1
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(XanhNhat, RoundedCornerShape(12.dp))
+                        .clickable { onItemClick(so) }
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "${dinhDangSo(so)} | $CAU_NOI",
+                        modifier = Modifier.weight(1f),
+                        fontSize = 14.sp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Box(
+                        modifier = Modifier
+                            .size(32.dp)
+                            .background(Color.Black, RoundedCornerShape(8.dp)),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                            contentDescription = "Xem chi tiết",
+                            tint = Color.White
+                        )
+                    }
+                }
+            }
         }
     }
 }
