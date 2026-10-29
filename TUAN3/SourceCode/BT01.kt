@@ -33,6 +33,7 @@ val XanhChinh = Color(0xFF2196F3)
 val XanhNhat = Color(0xFFBBDEFB)
 
 const val CAU_NOI = "The only way to do great work is to love what you do."
+const val TAC_GIA = "Steve Jobs"
 const val SO_DONG = 1_000_000
 
 @Composable
@@ -47,6 +48,18 @@ fun BT01Screen() {
             ListScreen(
                 onBack = { navController.popBackStack() },
                 onItemClick = { so -> navController.navigate("detail/$so") }
+            )
+        }
+        composable(
+            route = "detail/{so}",
+            arguments = listOf(navArgument("so") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val so = backStackEntry.arguments?.getInt("so") ?: 1
+            DetailScreen(
+                so = so,
+                onBack = { navController.popBackStack() },
+                // Quay thẳng về Root, xóa List và Detail khỏi back stack
+                onBackToRoot = { navController.popBackStack("root", inclusive = false) }
             )
         }
     }
@@ -169,6 +182,59 @@ fun ListScreen(onBack: () -> Unit, onItemClick: (Int) -> Unit) {
                         )
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun DetailScreen(so: Int, onBack: () -> Unit, onBackToRoot: () -> Unit) {
+    Scaffold(topBar = { ThanhTieuDe("Detail", onBack) }) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "\"$CAU_NOI\"",
+                fontSize = 14.sp,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(24.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Brush.verticalGradient(listOf(XanhNhat, XanhChinh)),
+                        RoundedCornerShape(8.dp)
+                    )
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "\"$CAU_NOI\"",
+                    fontSize = 30.sp,
+                    fontFamily = FontFamily.Monospace,
+                    textAlign = TextAlign.Center,
+                    lineHeight = 38.sp
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+                Text(TAC_GIA, fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Dòng số ${dinhDangSo(so)}", fontSize = 12.sp, color = Color.White)
+            }
+            Spacer(modifier = Modifier.weight(1f))
+            Button(
+                onClick = onBackToRoot,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(48.dp),
+                shape = RoundedCornerShape(24.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = XanhChinh)
+            ) {
+                Text("BACK TO ROOT", fontWeight = FontWeight.Bold)
             }
         }
     }
