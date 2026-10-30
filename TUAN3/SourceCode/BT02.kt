@@ -48,9 +48,25 @@ fun BT02Screen() {
     NavHost(navController = navController, startDestination = "chon") {
         composable("chon") {
             ChonLoaiDanhSach(
-                onColumn = { },
+                onColumn = { navController.navigate("column") },
                 onLazyColumn = { navController.navigate("lazy") }
             )
+        }
+        composable("column") {
+            ManHinhDanhSach("Column", onBack = { navController.popBackStack() }) {
+                // Column tạo TẤT CẢ 1.000.000 dòng ngay lập tức -> app bị treo/đứng rất lâu, có thể bị crash
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    for (i in 0 until SO_DONG) {
+                        TheDong(i)
+                    }
+                }
+            }
         }
         composable("lazy") {
             ManHinhDanhSach("LazyColumn", onBack = { navController.popBackStack() }) {
