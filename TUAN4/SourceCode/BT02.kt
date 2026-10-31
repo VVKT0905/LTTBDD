@@ -105,7 +105,9 @@ class ThuVien {
 data class TabThuVien(val route: String, val nhan: String, val icon: androidx.compose.ui.graphics.vector.ImageVector)
 
 val CAC_TAB = listOf(
-    TabThuVien("quan_ly", "Quản lý", Icons.Filled.Home)
+    TabThuVien("quan_ly", "Quản lý", Icons.Filled.Home),
+    TabThuVien("ds_sach", "DS Sách", Icons.AutoMirrored.Filled.LibraryBooks),
+    TabThuVien("sinh_vien", "Sinh viên", Icons.Filled.Person)
 )
 
 @Composable
@@ -145,6 +147,8 @@ fun BT02Screen() {
             modifier = Modifier.padding(padding)
         ) {
             composable("quan_ly") { QuanLyScreen(thuVien) }
+            composable("ds_sach") { DanhSachSachScreen(thuVien) }
+            composable("sinh_vien") { SinhVienScreen(thuVien) }
         }
     }
 }
@@ -338,4 +342,123 @@ fun ThongTinSachDialog(sach: Sach, nguoiMuon: SinhVien?, onDong: () -> Unit) {
 
 // ---------- Tab 2: Danh sách sách ----------
 
+@Composable
+fun DanhSachSachScreen(thuVien: ThuVien) {
+    var ten by remember { mutableStateOf("") }
+    var tacGia by remember { mutableStateOf("") }
+    var nam by remember { mutableStateOf("") }
+    var loi by remember { mutableStateOf("") }
+    var sachXem by remember { mutableStateOf<Sach?>(null) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 20.dp)
+    ) {
+        TieuDeThuVien("Danh sách sách")
+
+        OutlinedTextField(ten, { ten = it }, Modifier.fillMaxWidth(), label = { Text("Tên sách") }, singleLine = true)
+        Row {
+            OutlinedTextField(tacGia, { tacGia = it }, Modifier.weight(2f), label = { Text("Tác giả") }, singleLine = true)
+            Spacer(modifier = Modifier.width(8.dp))
+            OutlinedTextField(nam, { nam = it }, Modifier.weight(1f), label = { Text("Năm") }, singleLine = true)
+        }
+        if (loi.isNotEmpty()) Text(loi, color = Color.Red, fontSize = 13.sp)
+        Spacer(modifier = Modifier.height(8.dp))
+        Button(
+            onClick = {
+                val namSo = nam.toIntOrNull()
+                if (ten.isBlank() || tacGia.isBlank() || namSo == null) {
+                    loi = "Nhập đủ tên sách, tác giả và năm (số)"
+                } else {
+                    thuVien.themSach(ten.trim(), tacGia.trim(), namSo)
+                    ten = ""; tacGia = ""; nam = ""; loi = ""
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = XanhThuVien)
+        ) {
+            Text("Thêm sách")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(thuVien.dsSach, key = { it.ma }) { sach ->
+                val nguoiMuon = thuVien.nguoiMuon(sach)
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { sachXem = sach }
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text("${sach.ma} - ${sach.ten}", fontWeight = FontWeight.SemiBold)
+                        Text(
+                            if (nguoiMuon == null) "Còn trong thư viện" else "Đang mượn: ${nguoiMuon.ten}",
+                            fontSize = 13.sp,
+                            color = if (nguoiMuon == null) Color(0xFF2E7D32) else DoThuVien
+                        )
+                    }
+                }
+            }
+        }
+    }
+
+    sachXem?.let { sach ->
+        ThongTinSachDialog(sach, thuVien.nguoiMuon(sach), onDong = { sachXem = null })
+    }
+}
+
 // ---------- Tab 3: Sinh viên ----------
+
+@Composable
+fun SinhVienScreen(thuVien: ThuVien) {
+    var ten by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 20.dp)
+    ) {
+        TieuDeThuVien("Danh sách sinh viên")
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            OutlinedTextField(
+                value = ten,
+                onValueChange = { ten = it },
+                modifier = Modifier.weight(1f),
+                label = { Text("Tên sinh viên") },
+                singleLine = true
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Button(
+                onClick = {
+                    if (ten.isNotBlank()) {
+                        thuVien.themSinhVien(ten.trim())
+                        ten = ""
+                    }
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = XanhThuVien)
+            ) {
+                Text("Thêm")
+            }
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+        LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(thuVien.dsSinhVien, key = { it.ma }) { sv ->
+                val dangMuon = thuVien.sachDangMuon(sv)
+                Card(modifier = Modifier.fillMaxWidth()) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text("${sv.ma} - ${sv.ten}", fontWeight = FontWeight.SemiBold)
+                        Text(
+                            if (dangMuon.isEmpty()) "Chưa mượn sách"
+                            else "Đang mượn: " + dangMuon.joinToString { it.ten },
+                            fontSize = 13.sp,
+                            color = Color.Gray
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
