@@ -68,10 +68,51 @@ fun BT03Screen() {
             VerifyCodeScreen(
                 email = email,
                 onBack = { navController.popBackStack() },
-                onNext = { }
+                onNext = { otp -> navController.navigate("reset/${Uri.encode(email)}/$otp") }
             )
         }
 
+        composable(
+            "reset/{email}/{otp}",
+            arguments = listOf(
+                navArgument("email") { type = NavType.StringType },
+                navArgument("otp") { type = NavType.StringType }
+            )
+        ) { entry ->
+            val email = entry.arguments?.getString("email").orEmpty()
+            val otp = entry.arguments?.getString("otp").orEmpty()
+            ResetPasswordScreen(
+                onBack = { navController.popBackStack() },
+                onNext = { pass ->
+                    navController.navigate("confirm/${Uri.encode(email)}/$otp/${Uri.encode(pass)}")
+                }
+            )
+        }
+
+        composable(
+            "confirm/{email}/{otp}/{pass}",
+            arguments = listOf(
+                navArgument("email") { type = NavType.StringType },
+                navArgument("otp") { type = NavType.StringType },
+                navArgument("pass") { type = NavType.StringType }
+            )
+        ) { entry ->
+            val email = entry.arguments?.getString("email").orEmpty()
+            val otp = entry.arguments?.getString("otp").orEmpty()
+            val pass = entry.arguments?.getString("pass").orEmpty()
+            ConfirmScreen(
+                email = email,
+                otp = otp,
+                pass = pass,
+                onBack = { navController.popBackStack() },
+                onSubmit = {
+                    // Gửi dữ liệu ngược về màn 1 rồi xóa các màn 2, 3, 4 khỏi back stack
+                    navController.getBackStackEntry("forget")
+                        .savedStateHandle["ket_qua"] = arrayListOf(email, otp, pass)
+                    navController.popBackStack("forget", inclusive = false)
+                }
+            )
+        }
     }
 }
 
@@ -285,4 +326,54 @@ fun VerifyCodeScreen(email: String, onBack: () -> Unit, onNext: (String) -> Unit
 
 // ---------- Màn 3: Reset Password ----------
 
+@Composable
+fun ResetPasswordScreen(onBack: () -> Unit, onNext: (String) -> Unit) {
+    var pass by remember { mutableStateOf("") }
+    var nhapLai by remember { mutableStateOf("") }
+    var loi by remember { mutableStateOf("") }
+
+    KhungManHinh(
+        tieuDe = "Create new password",
+        moTa = "Your new password must be different form previously used password",
+        onBack = onBack
+    ) {
+        ONhap(pass, { pass = it; loi = "" }, "Password", Icons.Outlined.Lock, laMatKhau = true)
+        Spacer(modifier = Modifier.height(12.dp))
+        ONhap(nhapLai, { nhapLai = it; loi = "" }, "Confirm Password", Icons.Outlined.Lock, laMatKhau = true)
+        Loi(loi)
+        Spacer(modifier = Modifier.height(24.dp))
+        NutXanh("Next") {
+            loi = when {
+                pass.length < 6 -> "Mật khẩu tối thiểu 6 ký tự"
+                pass != nhapLai -> "Mật khẩu nhập lại không khớp"
+                else -> ""
+            }
+            if (loi.isEmpty()) onNext(pass)
+        }
+    }
+}
+
 // ---------- Màn 4: Confirm ----------
+
+@Composable
+fun ConfirmScreen(
+    email: String,
+    otp: String,
+    pass: String,
+    onBack: () -> Unit,
+    onSubmit: () -> Unit
+) {
+    KhungManHinh(
+        tieuDe = "Confirm",
+        moTa = "We are here to help you!",
+        onBack = onBack
+    ) {
+        ONhap(email, {}, "", Icons.Outlined.Person, chiDoc = true)
+        Spacer(modifier = Modifier.height(12.dp))
+        ONhap(otp, {}, "", Icons.Outlined.Email, chiDoc = true)
+        Spacer(modifier = Modifier.height(12.dp))
+        ONhap(pass, {}, "", Icons.Outlined.Lock, laMatKhau = true, chiDoc = true)
+        Spacer(modifier = Modifier.height(24.dp))
+        NutXanh("Submit", onSubmit)
+    }
+}
