@@ -298,3 +298,96 @@ fun LoginScreen(onThanhCong: () -> Unit) {
 }
 
 // ---------- Màn hình thông tin cá nhân ----------
+
+@Composable
+fun ProfileScreen(onBack: () -> Unit, onDangXuat: () -> Unit) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val user = FirebaseAuth.getInstance().currentUser
+    val ten = tenHienThi(user)
+    val laGoogle = user?.providerData?.any { it.providerId == "google.com" } == true
+
+    // Thống kê lấy từ Firestore (xem BT02)
+    val dsViec = rememberDanhSachViec()
+    val daXong = dsViec.count { it.daXong }
+    val dangCho = dsViec.size - daXong
+    val phanTram = if (dsViec.isEmpty()) 0 else daXong * 100 / dsViec.size
+
+    Scaffold(containerColor = NenTrang) { padding ->
+        Column(
+            modifier = Modifier
+                .padding(padding)
+                .fillMaxSize()
+                .padding(20.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Box(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier.clickable { onBack() },
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, null, tint = XanhTodo)
+                    Text("Trang chủ", color = XanhTodo)
+                }
+                Text("Hồ sơ", fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Center))
+            }
+            Spacer(modifier = Modifier.height(24.dp))
+            Avatar(ten, 80)
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(ten, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+            Text(user?.email ?: "Tài khoản dùng thử", color = ChuPhu)
+            if (laGoogle) {
+                Spacer(modifier = Modifier.height(6.dp))
+                Row(
+                    modifier = Modifier
+                        .background(Color(0xFFE6F4EA), RoundedCornerShape(8.dp))
+                        .padding(horizontal = 8.dp, vertical = 2.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(Icons.Filled.Check, null, tint = Color(0xFF1E8E3E), modifier = Modifier.size(14.dp))
+                    Text(" Đã liên kết tài khoản Google", fontSize = 12.sp, color = Color(0xFF1E8E3E))
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OThongKe("$daXong", "Việc đã xong", Modifier.weight(1f))
+                OThongKe("$dangCho", "Đang chờ", Modifier.weight(1f))
+                OThongKe("$phanTram%", "Hoàn thành", Modifier.weight(1f))
+            }
+
+            Spacer(modifier = Modifier.weight(1f))
+            // Nút thử Crashlytics (BT02): bấm sẽ làm app crash, mở lại app để báo cáo được gửi lên
+            TextButton(onClick = { FirebaseHelper.thuCrash() }) {
+                Text("Thử Crashlytics (app sẽ bị crash)", color = ChuPhu, fontSize = 12.sp)
+            }
+            OutlinedButton(
+                onClick = {
+                    scope.launch {
+                        AuthHelper.dangXuat(context)
+                        onDangXuat()
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Icon(Icons.AutoMirrored.Filled.Logout, null, tint = Color(0xFFE03131))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Đăng xuất", color = Color(0xFFE03131))
+            }
+        }
+    }
+}
+
+@Composable
+fun OThongKe(so: String, nhan: String, modifier: Modifier) {
+    Column(
+        modifier = modifier
+            .background(Color.White, RoundedCornerShape(12.dp))
+            .border(1.dp, Color(0xFFEDEFF3), RoundedCornerShape(12.dp))
+            .padding(12.dp)
+    ) {
+        Text(so, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        Text(nhan, fontSize = 11.sp, color = ChuPhu)
+    }
+}
