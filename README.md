@@ -13,3 +13,4 @@ Bài tập về nhà các tuần môn Lập trình thiết bị di động. Mỗ
 - [Tuần 3: Navigation & LazyColumn](TUAN3/)
 - [Tuần 4: Navigation + OOP, Quản lý thư viện, Data Flow](TUAN4/)
 - [Tuần 5: Firebase Authentication & tích hợp Firebase](TUAN5/)
+- [Tuần 6: Xử lý mạng và gọi API (Retrofit)](TUAN6/)
