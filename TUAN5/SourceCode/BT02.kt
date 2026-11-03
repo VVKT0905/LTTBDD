@@ -440,3 +440,28 @@ fun ThemViecDialog(onDong: () -> Unit, onThem: (String, String, String) -> Unit)
 }
 
 // ---------- Cloud Messaging: nhận thông báo đẩy ----------
+
+class UthMessagingService : FirebaseMessagingService() {
+
+    override fun onNewToken(token: String) {
+        Log.d(TAG, "FCM token mới: $token")
+    }
+
+    // Gọi khi app đang mở mà có thông báo tới (khi app tắt, hệ thống tự hiện thông báo)
+    override fun onMessageReceived(message: RemoteMessage) {
+        val tieuDe = message.notification?.title ?: message.data["title"] ?: "UTH Todo"
+        val noiDung = message.notification?.body ?: message.data["body"] ?: ""
+
+        FirebaseHelper.taoKenhThongBao(this)
+        val thongBao = NotificationCompat.Builder(this, "nhac_viec")
+            .setSmallIcon(android.R.drawable.ic_dialog_info)
+            .setContentTitle(tieuDe)
+            .setContentText(noiDung)
+            .setAutoCancel(true)
+            .build()
+        val manager = getSystemService(NotificationManager::class.java)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || manager.areNotificationsEnabled()) {
+            manager.notify(System.currentTimeMillis().toInt(), thongBao)
+        }
+    }
+}
